@@ -13,6 +13,8 @@ var pathToExecutable string
 var pathToInputFile string
 var numberOfTests = 21
 
+var precision = 3
+
 func processCommandLineArgs() (ok bool) {
 	if len(os.Args) == 1 || len(os.Args) > 4 {
 		fmt.Println("pass pathToExecutable [pathToInputFile] [numberOfTests]" +
@@ -55,7 +57,6 @@ type profilerOutput struct {
 }
 
 func getProfilerDurationVal(s string, alias string) float32 {
-	accuracy := 3
 	i := strings.Index(s, alias)
 	if i == -1 {
 		return float32(0)
@@ -66,7 +67,7 @@ func getProfilerDurationVal(s string, alias string) float32 {
 	k := j
 	for ; s[k] != '.'; k++ {
 	}
-	valueStr := s[j : k+accuracy+1]
+	valueStr := s[j : k+precision+1]
 	value, err := strconv.ParseFloat(valueStr, 32)
 	if err != nil {
 		panic(err)
@@ -177,15 +178,19 @@ func calcRoots(p *profilerOutput) *profilerOutput {
 	return &res
 }
 
+func formatFloat(v float32) string {
+	return strconv.FormatFloat(float64(v), 'f', 3, 32)
+}
+
 func (p *profilerOutput) print() {
-	fmt.Println("Total program time:", p.total, "seconds")
-	fmt.Println("(Total refal time):", p.totalRefal, "seconds")
-	fmt.Println("Builtin time:", p.builtin, "seconds")
-	fmt.Println("Linear result time:", p.linearResult, "seconds")
-	fmt.Println("Linear pattern time:", p.linearPattern, "seconds")
-	fmt.Println("Open e-loop time (clear):", p.openELoop, "seconds")
-	fmt.Println("t- and e-var copy time:", p.TandEVarCopy, "seconds")
-	fmt.Println("Repeated e-var match time (inside e-loops):", p.repeatedEvarMatch, "seconds")
+	fmt.Println("Total program time:", formatFloat(p.total), "seconds")
+	fmt.Println("(Total refal time):", formatFloat(p.totalRefal), "seconds")
+	fmt.Println("Builtin time:", formatFloat(p.builtin), "seconds")
+	fmt.Println("Linear result time:", formatFloat(p.linearResult), "seconds")
+	fmt.Println("Linear pattern time:", formatFloat(p.linearPattern), "seconds")
+	fmt.Println("Open e-loop time (clear):", formatFloat(p.openELoop), "seconds")
+	fmt.Println("t- and e-var copy time:", formatFloat(p.TandEVarCopy), "seconds")
+	fmt.Println("Repeated e-var match time (inside e-loops):", formatFloat(p.repeatedEvarMatch), "seconds")
 	fmt.Println("Step count", p.stepCount, "steps")
 	fmt.Println("Memory used", p.memoryUsedNodes, "nodes")
 }
@@ -214,7 +219,7 @@ func main() {
 			return
 		}
 		results[i] = parseProfilerOutput(string(stdoutStderr))
-		fmt.Println("==", i+1, "nt EXECUTION FINISHED ==")
+		fmt.Println("==", i+1, " EXECUTION FINISHED ==")
 		results[i].print()
 		fmt.Println()
 	}
