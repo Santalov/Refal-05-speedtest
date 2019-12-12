@@ -66,7 +66,7 @@ func getProfilerDurationVal(s string, alias string) float32 {
 	k := j
 	for ; s[k] != '.'; k++ {
 	}
-	valueStr := s[j : k+accuracy]
+	valueStr := s[j : k+accuracy+1]
 	value, err := strconv.ParseFloat(valueStr, 32)
 	if err != nil {
 		panic(err)
@@ -177,6 +177,19 @@ func calcRoots(p *profilerOutput) *profilerOutput {
 	return &res
 }
 
+func (p *profilerOutput) print() {
+	fmt.Println("Total program time:", p.total, "seconds")
+	fmt.Println("(Total refal time):", p.totalRefal, "seconds")
+	fmt.Println("Builtin time:", p.builtin, "seconds")
+	fmt.Println("Linear result time:", p.linearResult, "seconds")
+	fmt.Println("Linear pattern time:", p.linearPattern, "seconds")
+	fmt.Println("Open e-loop time (clear):", p.openELoop, "seconds")
+	fmt.Println("t- and e-var copy time:", p.TandEVarCopy, "seconds")
+	fmt.Println("Repeated e-var match time (inside e-loops):", p.repeatedEvarMatch, "seconds")
+	fmt.Println("Step count", p.stepCount, "steps")
+	fmt.Println("Memory used", p.memoryUsedNodes, "nodes")
+}
+
 func main() {
 	if !processCommandLineArgs() {
 		return
@@ -198,8 +211,22 @@ func main() {
 		stdoutStderr, err := cmd.CombinedOutput()
 		if err != nil {
 			fmt.Println("executable have returned a error", err)
+			return
 		}
 		results[i] = parseProfilerOutput(string(stdoutStderr))
-		fmt.Println(*results[i])
+		fmt.Println("==", i+1, "nt EXECUTION FINISHED ==")
+		results[i].print()
+		fmt.Println()
 	}
+	avg := calcAverage(results)
+	diff := calcDifferenceQuads(results, avg)
+	diffAvg := calcAverage(diff)
+	standartDeviation := calcRoots(diffAvg)
+
+	fmt.Println("=== AVERAGE RESULT ===")
+	avg.print()
+	fmt.Println()
+	fmt.Println("=== STANDART DEVIATION ===")
+	standartDeviation.print()
+	fmt.Println()
 }
