@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
-	"time"
 )
 
 var pathToExecutable string
@@ -43,23 +42,23 @@ func processCommandLineArgs() (ok bool) {
 }
 
 type profilerOutput struct {
-	total             time.Duration
-	totalRefal        time.Duration
-	builtin           time.Duration
-	linearResult      time.Duration
-	linearPattern     time.Duration
-	openELoop         time.Duration
-	TandEVarCopy      time.Duration
-	repeatedEvarMatch time.Duration
+	total             float32
+	totalRefal        float32
+	builtin           float32
+	linearResult      float32
+	linearPattern     float32
+	openELoop         float32
+	TandEVarCopy      float32
+	repeatedEvarMatch float32
 	stepCount         int
 	memoryUsedNodes   int
 }
 
-func getProfilerDurationVal(s string, alias string) time.Duration {
+func getProfilerDurationVal(s string, alias string) float32 {
 	accuracy := 3
 	i := strings.Index(s, alias)
 	if i == -1 {
-		return time.Duration(0)
+		return float32(0)
 	}
 	j := i + len(alias)
 	for ; s[j] == ' '; j++ {
@@ -72,7 +71,7 @@ func getProfilerDurationVal(s string, alias string) time.Duration {
 	if err != nil {
 		panic(err)
 	}
-	return time.Duration(value * math.Pow10(9))
+	return float32(value)
 }
 
 func getProfilerCountVal(s string, alias string) int {
@@ -109,9 +108,81 @@ func parseProfilerOutput(s string) *profilerOutput {
 	return &res
 }
 
+func calcAverage(results []*profilerOutput) *profilerOutput {
+	res := profilerOutput{}
+	for _, p := range results {
+		res.total += p.total
+		res.totalRefal += p.totalRefal
+		res.builtin += p.builtin
+		res.linearResult += p.linearResult
+		res.linearPattern += p.linearPattern
+		res.openELoop += p.openELoop
+		res.TandEVarCopy += p.TandEVarCopy
+		res.repeatedEvarMatch += p.repeatedEvarMatch
+		res.stepCount += p.stepCount
+		res.memoryUsedNodes += p.memoryUsedNodes
+	}
+	n := float32(len(results))
+	res.total /= n
+	res.totalRefal /= n
+	res.builtin /= n
+	res.linearResult /= n
+	res.linearPattern /= n
+	res.openELoop /= n
+	res.TandEVarCopy /= n
+	res.repeatedEvarMatch /= n
+	res.stepCount /= int(n)
+	res.memoryUsedNodes /= int(n)
+	return &res
+}
+
+func pow2(v float32) float32 {
+	return v * v
+}
+
+func calcDifferenceQuads(results []*profilerOutput, avg *profilerOutput) []*profilerOutput {
+	answer := make([]*profilerOutput, len(results))
+	for i, p := range results {
+		answer[i] = new(profilerOutput)
+		answer[i].total = pow2(avg.total - p.total)
+		answer[i].totalRefal = pow2(avg.totalRefal - p.totalRefal)
+		answer[i].builtin = pow2(avg.builtin - p.builtin)
+		answer[i].linearResult = pow2(avg.linearResult - p.linearResult)
+		answer[i].linearPattern = pow2(avg.linearPattern - p.linearPattern)
+		answer[i].openELoop = pow2(avg.openELoop - p.openELoop)
+		answer[i].TandEVarCopy = pow2(avg.TandEVarCopy - p.TandEVarCopy)
+		answer[i].repeatedEvarMatch = pow2(avg.repeatedEvarMatch - p.repeatedEvarMatch)
+		answer[i].stepCount = 0
+		answer[i].memoryUsedNodes = 0
+	}
+	return answer
+}
+
+func root2(v float32) float32 {
+	return float32(math.Sqrt(float64(v)))
+}
+
+func calcRoots(p *profilerOutput) *profilerOutput {
+	res := profilerOutput{}
+	res.total = root2(p.total)
+	res.totalRefal = root2(p.totalRefal)
+	res.builtin = root2(p.builtin)
+	res.linearResult = root2(p.linearResult)
+	res.linearPattern = root2(p.linearPattern)
+	res.openELoop = root2(p.openELoop)
+	res.TandEVarCopy = root2(p.TandEVarCopy)
+	res.repeatedEvarMatch = root2(p.repeatedEvarMatch)
+	res.stepCount = p.stepCount
+	res.memoryUsedNodes = p.memoryUsedNodes
+	return &res
+}
+
 func main() {
 	if !processCommandLineArgs() {
 		return
+	}
+	if numberOfTests <= 0 {
+		fmt.Println("numberOfTest should be greater than 0")
 	}
 	results := make([]*profilerOutput, numberOfTests)
 	for i := 0; i < numberOfTests; i++ {
