@@ -159,6 +159,22 @@ func calcDifferenceQuads(results []*profilerOutput, avg *profilerOutput) []*prof
 	return answer
 }
 
+func sub(from *profilerOutput, val *profilerOutput) *profilerOutput {
+	answer := new(profilerOutput)
+	answer = new(profilerOutput)
+	answer.total = from.total - val.total
+	answer.totalRefal = from.totalRefal - val.totalRefal
+	answer.builtin = from.builtin - val.builtin
+	answer.linearResult = from.linearResult - val.linearResult
+	answer.linearPattern = from.linearPattern - val.linearPattern
+	answer.openELoop = from.openELoop - val.openELoop
+	answer.TandEVarCopy = from.TandEVarCopy - val.TandEVarCopy
+	answer.repeatedEvarMatch = from.repeatedEvarMatch - val.repeatedEvarMatch
+	answer.stepCount = from.stepCount - val.stepCount
+	answer.memoryUsedNodes = from.memoryUsedNodes - val.memoryUsedNodes
+	return answer
+}
+
 func root2(v float32) float32 {
 	return float32(math.Sqrt(float64(v)))
 }
@@ -193,6 +209,27 @@ func (p *profilerOutput) print() {
 	fmt.Println("Repeated e-var match time (inside e-loops):", formatFloat(p.repeatedEvarMatch), "seconds")
 	fmt.Println("Step count", p.stepCount, "steps")
 	fmt.Println("Memory used", p.memoryUsedNodes, "nodes")
+}
+
+func printInterval(leftBorder *profilerOutput, rightBorder *profilerOutput) {
+	fmt.Println("Total program time:", formatFloat(leftBorder.total),
+		"-", formatFloat(rightBorder.total), "seconds")
+	fmt.Println("(Total refal time):", formatFloat(leftBorder.totalRefal),
+		"-", formatFloat(rightBorder.totalRefal), "seconds")
+	fmt.Println("Builtin time:", formatFloat(leftBorder.builtin),
+		"-", formatFloat(rightBorder.builtin), "seconds")
+	fmt.Println("Linear result time:", formatFloat(leftBorder.linearResult),
+		"-", formatFloat(rightBorder.linearResult), "seconds")
+	fmt.Println("Linear pattern time:", formatFloat(leftBorder.linearPattern),
+		"-", formatFloat(rightBorder.linearPattern), "seconds")
+	fmt.Println("Open e-loop time (clear):", formatFloat(leftBorder.openELoop),
+		"-", formatFloat(rightBorder.openELoop), "seconds")
+	fmt.Println("t- and e-var copy time:", formatFloat(leftBorder.TandEVarCopy),
+		"-", formatFloat(rightBorder.TandEVarCopy), "seconds")
+	fmt.Println("Repeated e-var match time (inside e-loops):", formatFloat(leftBorder.repeatedEvarMatch),
+		"-", formatFloat(rightBorder.repeatedEvarMatch), "seconds")
+	fmt.Println("Step count", leftBorder.stepCount, "steps")
+	fmt.Println("Memory used", leftBorder.memoryUsedNodes, "nodes")
 }
 
 func main() {
@@ -231,6 +268,13 @@ func main() {
 	fmt.Println("=== AVERAGE RESULT ===")
 	avg.print()
 	fmt.Println()
+
+	fmt.Println("=== CONFIDENCE INTERVAL ===")
+	from := sub(avg, standartDeviation)
+	to := sub(avg, sub(new(profilerOutput), standartDeviation))
+	printInterval(from, to)
+	fmt.Println()
+
 	fmt.Println("=== STANDART DEVIATION ===")
 	standartDeviation.print()
 	fmt.Println()
